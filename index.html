@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Vacation</title>
+    <style>
+        html {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            font-size: 1rem;
+            min-height: 100dvh;
+            min-height: 100vh;
+        }
+
+        h2 {
+            margin: 0;
+            padding-top: 15px;
+        }
+
+        #progress-bar-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 25px;
+            overflow: hidden;
+            height: 30px;
+            margin: 20px 0;
+        }
+
+        #progress-bar-text {
+            font-weight: bold;
+            padding-right: 5px;
+        }
+
+        #progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            width: 0;
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 1s;
+        }
+
+        #ducks {
+            text-align: left;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .steps__wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .step_item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .start-btn {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="steps__wrap">
+            <div class="step_item">
+                <h2 class="step_item__title">How many days before your vacation?</h2>
+                <div class="step_item__text">Enter the date:</div>
+                <input type="date" name="selectDate" min="today" id="datePicker">
+                <button type="button" class="start-btn" id="startBtn">Show me estimate!</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2 id="timer"></h2>
+        <div id="progress-bar-container">
+            <div id="progress-bar">
+                <span id="progress-bar-text"></span>
+            </div>
+        </div>
+        <div id="ducks"></div>
+    </div>
+    <script>
+        const datePicker = document.getElementById('datePicker');
+        const startBtn = document.getElementById('startBtn');
+        const ducksElement = document.getElementById('ducks');
+        const progressBar = document.getElementById('progress-bar');
+        const progressBarText = document.getElementById('progress-bar-text');
+        const timerElement = document.getElementById('timer');
+        const topContainer = document.querySelector('.steps__wrap');
+        let duckTimer = null;
+        let countdown = null;
+
+        const today = new Date();
+        datePicker.min = today.toISOString().split('T')[0]; // Set min date
+
+        // Check if there's a saved date in localStorage
+        const savedDate = localStorage.getItem('vacationDate');
+        const topContainerLs = localStorage.getItem('showTopPanel');
+        if (topContainerLs === 'false') {
+            topContainer.style.display = 'none'; // Hide the top container
+        } else {
+            topContainer.style.display = 'flex'; // Show the top container
+        }
+        if (savedDate) {
+            datePicker.value = savedDate;
+            startCountdownFromSavedDate(savedDate);
+        }
+
+        startBtn.addEventListener('click', () => {
+            const selectDate = datePicker.value;
+            if (!selectDate) {
+                alert('Please select a date!');
+                return;
+            }
+
+            const targetDate = new Date(selectDate);
+            const timeDiff = targetDate - new Date();
+            const secondsLeft = Math.floor(timeDiff / 1000);
+
+
+            if (secondsLeft <= 0) {
+                alert('Vacation date must be in the future!');
+                return;
+            }
+
+            localStorage.setItem('vacationDate', selectDate); // Save selected date to localStorage
+            localStorage.setItem('showTopPanel', false); // Show top panel
+            topContainer.style.display = 'none'; // Hide the top container
+            startCountDucks(secondsLeft);
+        });
+
+        function startCountdownFromSavedDate(dateStr) {
+            const targetDate = new Date(dateStr);
+            const timeDiff = targetDate - new Date();
+            const secondsLeft = Math.floor(timeDiff / 1000);
+
+            if (secondsLeft > 0) {
+                startCountDucks(secondsLeft);
+            } else {
+                localStorage.removeItem('vacationDate');
+                // Date is in the past, so we clear it from localStorage
+                localStorage.removeItem('showTopPanel'); // Remove top panel
+            }
+        }
+
+        function createDucks(count) {
+            ducksElement.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const duck = document.createElement('span');
+                duck.textContent = '🦆';
+                ducksElement.appendChild(duck);
+            }
+        }
+
+        function startDuckLoop() {
+            createDucks(90);
+
+            if (duckTimer) clearInterval(duckTimer);
+
+            duckTimer = setInterval(() => {
+                if (ducksElement.children.length > 0) {
+                    ducksElement.removeChild(ducksElement.lastChild);
+                } else {
+                    createDucks(90);
+                }
+            }, 1000);
+        }
+
+        function startCountDucks(totalSeconds) {
+            if (countdown) clearInterval(countdown);
+
+            let birds = totalSeconds;
+            const total = totalSeconds;
+
+            startDuckLoop();
+
+            countdown = setInterval(() => {
+                birds--;
+
+                if (birds <= 0) {
+                    clearInterval(countdown);
+                    clearInterval(duckTimer);
+                    timerElement.textContent = 'Yay! Vacation has begun! 🦆💨';
+                    ducksElement.innerHTML = '';
+                    progressBar.style.width = '100%';
+                    progressBarText.innerText = '100%';
+                    localStorage.removeItem('vacationDate'); // Clear vacation date
+                    localStorage.removeItem('showTopPanel'); // Remove top panel
+                } else {
+                    updateProgress(birds, total);
+                }
+            }, 1000);
+        }
+
+        function updateProgress(currentBirds, totalBirds) {
+            const progress = (totalBirds - currentBirds) / totalBirds * 100;
+            progressBar.style.width = `${progress}%`;
+            progressBarText.innerText = `${Math.round(progress)}%`;
+
+            const minutesLeft = Math.floor(currentBirds / 60);
+            const hoursLeft = Math.floor(minutesLeft / 60);
+            const daysLeft = Math.floor(hoursLeft / 24);
+
+            timerElement.textContent = `We're one vacation away: ${daysLeft} days, ${hoursLeft % 24} hours, ${minutesLeft % 60} minutes.`;
+        }
+    </script>
+
+
+</body>
+
+</html>
